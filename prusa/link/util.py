@@ -56,19 +56,33 @@ def loop_until(loop_evt: Event, run_every_sec: Callable[[], float], to_run,
         loop_evt.wait(run_again_in)
 
 
+#def get_local_ip():
+#    """
+#    Gets the local ip used for connecting to MQTT_HOSTNAME
+#    Code from https://stackoverflow.com/a/166589
+#    Beware this throws socket errors
+#    """
+#    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#    # does not matter if host is reachable or not,
+#    # any client interface that is UP should suffice
+#    sock.connect(("8.8.8.8", 1))
+#    local_ip = sock.getsockname()[0]
+#    sock.close()
+#    return local_ip
+
 def get_local_ip():
-    """
-    Gets the local ip used for connecting to MQTT_HOSTNAME
-    Code from https://stackoverflow.com/a/166589
-    Beware this throws socket errors
-    """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # does not matter if host is reachable or not,
-    # any client interface that is UP should suffice
-    sock.connect(("8.8.8.8", 1))
-    local_ip = sock.getsockname()[0]
-    sock.close()
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.254.254.254', 1))
+        local_ip = s.getsockname()[0]
+    except Exception:
+        local_ip = '127.0.0.1'
+    finally:
+        s.close()
     return local_ip
+    print(get_local_ip())
 
 
 def get_local_ip6():
