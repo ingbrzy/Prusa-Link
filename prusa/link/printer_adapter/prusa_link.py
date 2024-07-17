@@ -19,6 +19,7 @@ from prusa.connect.printer.const import Event as EventType
 from prusa.connect.printer.files import File
 from prusa.connect.printer.models import Sheet as SDKSheet
 
+from .. import __version__
 from ..camera_governor import CameraGovernor
 from ..cameras.picamera_driver import PiCameraDriver
 from ..cameras.v4l2_driver import V4L2Driver
@@ -45,6 +46,7 @@ from ..util import (
     get_print_stats_gcode,
     is_potato_cpu,
     make_fingerprint,
+    power_panic_delay,
     prctl_name,
 )
 from .auto_telemetry import AutoTelemetry
@@ -120,7 +122,6 @@ class TransferCallbackState(Enum):
     PRINTER_IN_ATTENTION = 3
 
 
-# TODO: Can i somehow make subcontrollers to isolate some of the components?
 class PrusaLink:
     """
     This class is the controller for PrusaLink, more specifically the part
@@ -147,6 +148,9 @@ class PrusaLink:
 
         self.serial_parser = ThreadedSerialParser()
 
+        # Wait for power panic recovery to reach a stable state
+        power_panic_delay(cfg)
+
         self.serial = SerialAdapter(
             self.serial_parser,
             self.model,
@@ -164,6 +168,7 @@ class PrusaLink:
         self.keepalive.set_use_connect(self.settings.use_connect())
 
         self.printer = MyPrinter()
+        self.printer.software = __version__
 
         drivers: List[Type[CameraDriver]] = [V4L2Driver]
         if PiCameraDriver.supported:
